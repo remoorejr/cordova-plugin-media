@@ -286,7 +286,79 @@ namespace WPCordovaClassLib.Cordova.Commands
         }
 
         /// <summary>
-        /// Stops recording and save to the file specified when recording started 
+        /// Starts recording and save the specified file
+        /// </summary>
+        public void startRecordingAudioWithCompression(string options)
+        {
+            string callbackId = this.CurrentCommandCallbackId;
+            try
+            {
+                MediaOptions mediaOptions = new MediaOptions();
+
+                try
+                {
+                    string[] optionsString = JSON.JsonHelper.Deserialize<string[]>(options);
+                    mediaOptions.Id = optionsString[0];
+                    mediaOptions.Src = optionsString[1];
+                    callbackId = mediaOptions.CallbackId = optionsString[2];
+                }
+                catch (Exception)
+                {
+                    DispatchCommandResult(new PluginResult(PluginResult.Status.JSON_EXCEPTION), mediaOptions.CallbackId);
+                    return;
+                }
+
+                if (mediaOptions != null)
+                {
+
+                    Deployment.Current.Dispatcher.BeginInvoke(() =>
+                    {
+                        try
+                        {
+                            AudioPlayer audio;
+                            if (!Media.players.ContainsKey(mediaOptions.Id))
+                            {
+                                audio = new AudioPlayer(this, mediaOptions.Id);
+                                Media.players.Add(mediaOptions.Id, audio);
+                            }
+                            else
+                            {
+                                audio = Media.players[mediaOptions.Id];
+                            }
+
+                            if (audio != null)
+                            {
+                                audio.startRecordingWithCompression(mediaOptions.Src, 1, 44000);
+                                DispatchCommandResult(new PluginResult(PluginResult.Status.OK), mediaOptions.CallbackId);
+                            }
+                            else
+                            {
+                                DispatchCommandResult(new PluginResult(PluginResult.Status.ERROR,
+                                                        "Error accessing AudioPlayer for key " + mediaOptions.Id), mediaOptions.CallbackId);
+                            }
+
+
+                        }
+                        catch (Exception e)
+                        {
+                            DispatchCommandResult(new PluginResult(PluginResult.Status.ERROR, e.Message), mediaOptions.CallbackId);
+                        }
+
+                    });
+                }
+                else
+                {
+                    DispatchCommandResult(new PluginResult(PluginResult.Status.JSON_EXCEPTION), mediaOptions.CallbackId);
+                }
+            }
+            catch (Exception e)
+            {
+                DispatchCommandResult(new PluginResult(PluginResult.Status.ERROR, e.Message), callbackId);
+            }
+        }
+
+        /// <summary>
+        /// Stops recording and save to the file specified when recording started
         /// </summary>
         public void stopRecordingAudio(string options)
         {
@@ -351,7 +423,7 @@ namespace WPCordovaClassLib.Cordova.Commands
             }
             catch (Exception)
             {
-                DispatchCommandResult(new PluginResult(PluginResult.Status.JSON_EXCEPTION, 
+                DispatchCommandResult(new PluginResult(PluginResult.Status.JSON_EXCEPTION,
                                                         "Error parsing options into setVolume method"), callbackId);
             }
         }
@@ -394,7 +466,7 @@ namespace WPCordovaClassLib.Cordova.Commands
         }
 
         /// <summary>
-        /// Starts or resume playing audio file 
+        /// Starts or resume playing audio file
         /// </summary>
         public void startPlayingAudio(string options)
         {
@@ -502,7 +574,7 @@ namespace WPCordovaClassLib.Cordova.Commands
         }
 
         /// <summary>
-        /// Pauses playing 
+        /// Pauses playing
         /// </summary>
         public void pausePlayingAudio(string options)
         {
@@ -511,7 +583,7 @@ namespace WPCordovaClassLib.Cordova.Commands
             {
                 string[] optionsString = JSON.JsonHelper.Deserialize<string[]>(options);
                 string mediaId = optionsString[0];
-                callbackId = optionsString[1]; 
+                callbackId = optionsString[1];
 
                 Deployment.Current.Dispatcher.BeginInvoke(() =>
                 {
@@ -628,7 +700,7 @@ namespace WPCordovaClassLib.Cordova.Commands
         /// <summary>
         /// Gets the duration of the audio file
         /// </summary>
-        
+
         [Obsolete("This method will be removed shortly")]
         public void getDurationAudio(string options)
         {

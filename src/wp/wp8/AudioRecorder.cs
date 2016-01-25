@@ -24,6 +24,10 @@ using Microsoft.Xna.Framework.Media;
 using Microsoft.Phone.Controls;
 using System.Diagnostics;
 using System.Windows.Resources;
+using Windows.Storage.Streams;
+using Windows.Phone.Media.Capture;
+using Windows.Storage;
+using System.Threading.Tasks;
 
 namespace WPCordovaClassLib.Cordova.Commands
 {
@@ -70,20 +74,9 @@ namespace WPCordovaClassLib.Cordova.Commands
         private Media handler;
 
         /// <summary>
-        /// Temporary buffer to store audio chunk
-        /// </summary>
-        private byte[] buffer;
-
-        /// <summary>
         /// Xna game loop dispatcher
         /// </summary>
         DispatcherTimer dtXna;
-
-
-        /// <summary>
-        /// Output buffer
-        /// </summary>
-        private MemoryStream memoryStream;
 
         /// <summary>
         /// The id of this player (used to identify Media object in JavaScript)
@@ -129,6 +122,8 @@ namespace WPCordovaClassLib.Cordova.Commands
         /// A random access stream to save the microphone stuff to
         /// </summary>
         private IRandomAccessStream sst;
+
+        private StorageFile outputFile;
 
         /// <summary>
         /// Creates AudioPlayer instance
@@ -188,16 +183,34 @@ namespace WPCordovaClassLib.Cordova.Commands
 
         private async Task<IRandomAccessStream> SetUpAudioFileForSavingRecordedAudioAsync(string fileName)
         {
-            StorageFile file = await CreateFileAsync(fileName, "SoundDump");
-            AudioPath = file.Path;
-            return await file.OpenAsync(FileAccessMode.ReadWrite);
+            StorageFolder applicationFolder = ApplicationData.Current.LocalFolder;
+            StorageFolder dataFolder = null;
+
+            try
+            {
+                dataFolder = await applicationFolder.GetFolderAsync("data");
+            }
+            catch
+            {
+                dataFolder = null;
+            }
+
+            if(dataFolder == null)
+            {
+                dataFolder = await applicationFolder.CreateFolderAsync("data");
+            }
+
+            outputFile = await dataFolder.CreateFileAsync(fileName, CreationCollisionOption.ReplaceExisting);
+
+            var stream = await outputFile.OpenAsync(FileAccessMode.ReadWrite);
+
+            return stream;
         }
 
         private async Task MicStartAsync(string foundbiteName)
         {
             mic = await AudioVideoCaptureDevice.OpenForAudioOnlyAsync();
             mic.AudioEncodingFormat = CameraCaptureAudioFormat.Aac;
-            iso = new IsolatedStorage();
             sst = await SetUpAudioFileForSavingRecordedAudioAsync(foundbiteName);
         }
 
@@ -214,10 +227,10 @@ namespace WPCordovaClassLib.Cordova.Commands
             sst.Dispose();
         }
 
-        public void startRecording(string filePath)
+        public async void startRecording(string filePath)
         {
-            MicStartAsync(filePath);
-            StartRecordingAsync();
+            await MicStartAsync(filePath);
+            await StartRecordingAsync();
         }
 
         public void startRecordingWithCompression(string filePath, int channels, int sampleRate)
@@ -225,9 +238,9 @@ namespace WPCordovaClassLib.Cordova.Commands
             startRecording(filePath);
         }
 
-        public void stopRecording()
+        public async void stopRecording()
         {
-            StopRecordingAsync();
+            await StopRecordingAsync();
         }
 
         /// <summary>
