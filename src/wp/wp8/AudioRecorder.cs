@@ -186,14 +186,14 @@ namespace WPCordovaClassLib.Cordova.Commands
             this.handler.ReportStatus(status);
         }
 
-        public async Task<IRandomAccessStream> SetUpAudioFileForSavingRecordedAudioAsync(string fileName)
+        private async Task<IRandomAccessStream> SetUpAudioFileForSavingRecordedAudioAsync(string fileName)
         {
             StorageFile file = await CreateFileAsync(fileName, "SoundDump");
             AudioPath = file.Path;
             return await file.OpenAsync(FileAccessMode.ReadWrite);
         }
 
-        public async Task MicStartAsync(string foundbiteName)
+        private async Task MicStartAsync(string foundbiteName)
         {
             mic = await AudioVideoCaptureDevice.OpenForAudioOnlyAsync();
             mic.AudioEncodingFormat = CameraCaptureAudioFormat.Aac;
@@ -201,12 +201,12 @@ namespace WPCordovaClassLib.Cordova.Commands
             sst = await SetUpAudioFileForSavingRecordedAudioAsync(foundbiteName);
         }
 
-        public async Task StartRecordingAsync()
+        private async Task StartRecordingAsync()
         {
             await mic.StartRecordingToStreamAsync(sst);
         }
 
-        public async Task StopRecordingAsync()
+        private async Task StopRecordingAsync()
         {
             await mic.StopRecordingAsync();
             mic.Dispose();
