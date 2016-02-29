@@ -1,4 +1,4 @@
-package org.apache.cordova.media;
+package com.commontime.cordova.audio;
 
 import android.util.Log;
 

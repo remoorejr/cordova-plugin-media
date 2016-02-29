@@ -16,7 +16,7 @@
        specific language governing permissions and limitations
        under the License.
 */
-package org.apache.cordova.media;
+package com.commontime.cordova.audio;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -42,7 +42,7 @@ import java.util.HashMap;
  *
  * Audio formats supported for player(tested):
  * 	.mp3, .wav
- * 
+ *
  * Audio recording uses MPEG-4 encoding, in a m4a wrapper.
  *
  * Local audio files must reside in one of two places:
@@ -92,7 +92,7 @@ public class AudioHandler extends CordovaPlugin {
             }
             this.startRecordingAudio(args.getString(0), FileHelper.stripFileProtocol(fileUriStr));
         }
-		
+
         else if (action.equals("startRecordingAudioWithCompression")) {
             String target = args.getString(1);
             String fileUriStr;
@@ -102,7 +102,7 @@ public class AudioHandler extends CordovaPlugin {
             } catch (IllegalArgumentException e) {
                 fileUriStr = target;
             }
-            
+
             // set defaults
             Integer sampleRate = 44100;
             Integer channels = 1;
@@ -134,7 +134,7 @@ public class AudioHandler extends CordovaPlugin {
             } catch (IllegalArgumentException e) {
                 fileUriStr = target;
             }
-            
+
             this.resumeRecordingAudio(args.getString(0), FileHelper.stripFileProtocol(fileUriStr), this.audioChannels, this.audioSampleRate);
         }
         else if (action.equals("stopRecordingAudio")) {
@@ -175,7 +175,7 @@ public class AudioHandler extends CordovaPlugin {
             callbackContext.sendPluginResult(new PluginResult(status, f));
             return true;
         }
-		
+
 		//REM mods
 		else if (action.equals("getRecordDbLevel")) {
             float f = this.getAudioRecordDbLevel(args.getString(0));
@@ -183,7 +183,7 @@ public class AudioHandler extends CordovaPlugin {
             return true;
         }
 		//---
-		
+
         else if (action.equals("create")) {
             String id = args.getString(0);
             String src = FileHelper.stripFileProtocol(args.getString(1));
@@ -317,7 +317,7 @@ public class AudioHandler extends CordovaPlugin {
         AudioPlayer audio = getOrCreatePlayer(id, file);
         audio.startRecordingWithCompression(file, channels, sampleRate);
     }
-	
+
 	/**
      * Pause recording (stop recording) and append to the file specified when recording started.
      * @param id				The id of the audio player
@@ -343,7 +343,7 @@ public class AudioHandler extends CordovaPlugin {
 
     /**
      * Stop recording.
-     * Note: This plugin never calls audio.stopRecording. 
+     * Note: This plugin never calls audio.stopRecording.
      * Instead it calls the pauseRecording method.
      * stopRecording is not required since it does not append.
      * @param id				The id of the audio player
@@ -398,7 +398,7 @@ public class AudioHandler extends CordovaPlugin {
             audio.stopPlaying();
         }
     }
-	
+
 	 /**
      * Get dB level of recording microphone power
      * @param id

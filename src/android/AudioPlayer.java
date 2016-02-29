@@ -16,7 +16,7 @@
        specific language governing permissions and limitations
        under the License.
 */
-package org.apache.cordova.media;
+package com.commontime.cordova.audio;
 
 
 import android.app.Activity;
@@ -151,7 +151,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
 
             this.audioFile = file;
             this.recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            
+
             //Modified by REM 06/15/2015 to generate MPEG_4 output
             this.recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             this.recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
@@ -203,8 +203,8 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             this.recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             this.recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
             this.recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            
-            this.recorder.setAudioChannels(channels); 
+
+            this.recorder.setAudioChannels(channels);
             this.recorder.setAudioSamplingRate(sampleRate);
 
             // On Android with MPEG4/AAC, bitRate affects file size, surprisingly, sample rate does not.
@@ -239,8 +239,8 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             sendErrorStatus(MEDIA_ERR_ABORTED);
         }
     }
-	
-	
+
+
 	 /**
      * Resume recording the specified file.
      *
@@ -260,8 +260,8 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
                 this.recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
                 this.recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
                 this.recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            
-                this.recorder.setAudioChannels(channels); 
+
+                this.recorder.setAudioChannels(channels);
                 this.recorder.setAudioSamplingRate(sampleRate);
 
                 // On Android with MPEG4/AAC, bitRate affects file size, surprisingly, sample rate does not.
@@ -275,7 +275,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
                 }
                 this.recorder.setAudioEncodingBitRate(bitRate);
                 Log.d(LOG_TAG, "MPEG-4 recording started with bit rate of " + bitRate + ", sample rate of " + sampleRate + "hz, " + channels + " audio channel(s)");
-                
+
                 this.recorder.setOutputFile(this.tempFile);
                 try {
                     this.recorder.prepare();
@@ -318,13 +318,13 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
 
         String logMsg = "renaming " + this.tempFile + " to " + file;
         Log.d(LOG_TAG, logMsg);
-		
+
 		if (f.exists()) {
 			if (!f.renameTo(new File(file))) Log.e(LOG_TAG, "FAILED " + logMsg);
 		}
     }
-	
-	
+
+
     /**
      * Append temporary recorded file to specified filename
      *
@@ -345,7 +345,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
         mp4ParserWrapper.append(file, this.tempFile);
 
     }
-	
+
 
     /**
      * Stop recording and save to the file specified when recording started.
@@ -365,8 +365,8 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             }
         }
     }
-	
-	
+
+
 	 /**
      * Pause recording (simulated), stop recording and append to the file specified when recording started.
      */
@@ -451,7 +451,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             sendErrorStatus(MEDIA_ERR_NONE_ACTIVE);
         }
     }
-	
+
 	 /**
      * Get db Recording Level.
      *
@@ -465,7 +465,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
         if (this.state == STATE.MEDIA_RUNNING) {
             int maxAmplitude = this.recorder.getMaxAmplitude();
 
-            /* 
+            /*
             /  Warning!
             /
             /  This is a desperate attempt to determine dB (SPL).
@@ -489,8 +489,8 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             return -1;
         }
     }
-	
-	
+
+
     /**
      * Callback to be invoked when playback of a media source has completed.
      *
