@@ -63,8 +63,8 @@ version="2.1.1">
         <source-file src="src/android/AudioPlayer.java" target-dir="src/org/apache/cordova/media" />
         <source-file src="src/android/FileHelper.java" target-dir="src/org/apache/cordova/media" />
         <source-file src="src/android/mp4ParserWrapper.java" target-dir="src/org/apache/cordova/media" />
-        <resource-file src="src/android/isoparser-1.1.17.jar" target-dir="libs" />
-        <resource-file src="src/android/aspectjrt-1.8.8.jar" target-dir="libs" />
+        <lib-file src="src/android/isoparser-1.1.17.jar" />
+        <lib-file src="src/android/aspectjrt-1.8.8.jar" />
 
      </platform>
      
