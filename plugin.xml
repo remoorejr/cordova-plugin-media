@@ -33,9 +33,10 @@ version="2.1.2">
 	<engines>
 		<engine name="cordova" version="&gt;=3.0.0" />
 	</engines>
-    
+    <!--
     <dependency id="cordova-plugin-file" version=">=3.0.0" />
-
+    -->
+	
     <js-module src="www/MediaError.js" name="MediaError">
         <clobbers target="window.MediaError" />
     </js-module>
