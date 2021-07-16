@@ -18,17 +18,18 @@
 */
 package org.apache.cordova.media;
 
-
-import android.app.Activity;
-import android.app.Application;
-import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
 import android.media.MediaPlayer.OnPreparedListener;
 import android.media.MediaRecorder;
+
+import android.Manifest;
+
+import android.os.Build;
 import android.os.Environment;
+
 import android.util.Log;
 
 import org.json.JSONException;
@@ -37,6 +38,9 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+
+import org.apache.cordova.PermissionHelper;
+
 
 /**
  * This class implements the audio playback and recording capabilities used by Cordova.
@@ -50,16 +54,16 @@ import java.io.IOException;
 public class AudioPlayer implements OnCompletionListener, OnPreparedListener, OnErrorListener {
 
     // AudioPlayer modes
-    public enum MODE { NONE, PLAY, RECORD };
+    public enum MODE { NONE, PLAY, RECORD }
 
     // AudioPlayer states
     public enum STATE { MEDIA_NONE,
-                        MEDIA_STARTING,
-                        MEDIA_RUNNING,
-                        MEDIA_PAUSED,
-                        MEDIA_STOPPED,
-                        MEDIA_LOADING
-                      };
+        MEDIA_STARTING,
+        MEDIA_RUNNING,
+        MEDIA_PAUSED,
+        MEDIA_STOPPED,
+        MEDIA_LOADING
+    }
 
     private static final String LOG_TAG = "AudioPlayer";
 
@@ -81,15 +85,17 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
     private MODE mode = MODE.NONE;          // Playback or Recording mode
     private STATE state = STATE.MEDIA_NONE; // State of recording or playback
 
-    private String audioFile = null;        // File name to play or record to
+    private String audioFile;               // File name to play or record to
     private float duration = -1;            // Duration of audio
 
-    private MediaRecorder recorder = null;  // Audio recording object
-    private String tempFile = null;         // Temporary recording file name
+    private MediaRecorder recorder;         // Audio recording object
+    private String tempFile;                // Temporary recording file name
 
-    private MediaPlayer player = null;      // Audio player object
+    private MediaPlayer player;             // Audio player object
     private boolean prepareOnly = true;     // playback after file prepare flag
-    private int seekOnPrepared = 0;     // seek to this location once media is prepared
+    private int seekOnPrepared = 0;         // seek to this location once media is prepared
+
+    private boolean usingCompression = false;   // flag used when appending to existing recording, compression levels must match
 
     /**
      * Constructor.
@@ -102,9 +108,23 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
         this.id = id;
         this.audioFile = file;
         this.recorder = new MediaRecorder();
-
+        // generate temp file
+        // modified 07-15-2021 to handle API 29+
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            this.tempFile = Environment.getExternalStorageDirectory().getAbsolutePath() + "/tmprecording.m4a";
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { //deprecated after sdk 29,
+                //if we have storage write permission we keep doing it this way
+                if (hasWritePermission()) {
+                    this.tempFile = Environment.getExternalStorageDirectory().getAbsolutePath() + "/tmprecording.m4a";
+                } else {
+                    //otherwise we get a directory private to the app (scoped storage)
+                    this.tempFile = this.handler.cordova.getActivity().getApplicationContext().getExternalFilesDir(null).getAbsolutePath() + "/tmprecording.m4a";
+                }
+            } else {
+                //prior to sdk 29, we keep asking permissions as before so we write to the same place as before
+                this.tempFile = Environment.getExternalStorageDirectory().getAbsolutePath() + "/tmprecording.m4a";
+            }
+
         } else {
             this.tempFile = "/data/data/" + handler.cordova.getActivity().getPackageName() + "/cache/tmprecording.m4a";
         }
@@ -138,44 +158,45 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
      */
     public void startRecording(String file) {
         switch (this.mode) {
-        case PLAY:
-            Log.d(LOG_TAG, "AudioPlayer Error: Can't record in play mode.");
-            sendErrorStatus(MEDIA_ERR_ABORTED);
-            break;
-        case NONE:
-            // if file exists, delete it
-            // Only new file are created with startRecording
+            case PLAY:
+                Log.d(LOG_TAG, "AudioPlayer Error: Can't record in play mode.");
+                sendErrorStatus(MEDIA_ERR_ABORTED);
+                break;
+            case NONE:
+                // if file exists, delete it
+                // Only a new file are created with startRecording
 
-            File f = new File(file);
-            f.delete();
+                File f = new File(file);
+                f.delete();
 
-            this.audioFile = file;
-            this.recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            
-            //Modified by REM 06/15/2015 to generate MPEG_4 output
-            this.recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            this.recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            this.recorder.setAudioChannels(1); // single channel
-            this.recorder.setAudioSamplingRate(44100); // 44.1 kHz for decent sound, similar to stock iOS media plugin
-            this.recorder.setAudioEncodingBitRate(32000); // low bit rate
+                this.audioFile = file;
+                this.recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 
-            this.recorder.setOutputFile(this.tempFile);
-            try {
-                this.recorder.prepare();
-                this.recorder.start();
-                this.setState(STATE.MEDIA_RUNNING);
-                return;
-            } catch (IllegalStateException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+                //Modified by REM 06/15/2015 to generate MPEG_4 output
+                this.recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+                this.recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+                this.recorder.setAudioChannels(1); // single channel
+                this.recorder.setAudioSamplingRate(44100); // 44.1 kHz for decent sound, similar to stock iOS media plugin
+                this.recorder.setAudioEncodingBitRate(32000); // low bit rate
 
-            sendErrorStatus(MEDIA_ERR_ABORTED);
-            break;
-        case RECORD:
-            Log.d(LOG_TAG, "AudioPlayer Error: Already recording.");
-            sendErrorStatus(MEDIA_ERR_ABORTED);
+                this.recorder.setOutputFile(this.tempFile);
+                this.usingCompression = false;
+                try {
+                    this.recorder.prepare();
+                    this.recorder.start();
+                    this.setState(STATE.MEDIA_RUNNING);
+                    return;
+                } catch (IllegalStateException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                sendErrorStatus(MEDIA_ERR_ABORTED);
+                break;
+            case RECORD:
+                Log.d(LOG_TAG, "AudioPlayer Error: Already recording.");
+                sendErrorStatus(MEDIA_ERR_ABORTED);
         }
     }
 
@@ -188,60 +209,63 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
      */
     public void startRecordingWithCompression(String file, Integer channels, Integer sampleRate) {
         switch (this.mode) {
-        case PLAY:
-            Log.d(LOG_TAG, "AudioPlayer Error: Can't record in play mode.");
-            sendErrorStatus(MEDIA_ERR_ABORTED);
-            break;
-        case NONE:
-            // if file exists, delete it
-            // Only new file are created with startRecording
+            case PLAY:
+                Log.d(LOG_TAG, "AudioPlayer Error: Can't record in play mode.");
+                sendErrorStatus(MEDIA_ERR_ABORTED);
+                break;
+            case NONE:
+                // if file exists, delete it
+                // Only new file are created with startRecording
 
-            File f = new File(file);
-            f.delete();
-            this.audioFile = file;
+                File f = new File(file);
+                f.delete();
+                this.audioFile = file;
 
-            this.recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            this.recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            this.recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            
-            this.recorder.setAudioChannels(channels); 
-            this.recorder.setAudioSamplingRate(sampleRate);
+                this.recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                this.recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+                this.recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
 
-            // On Android with MPEG4/AAC, bitRate affects file size, surprisingly, sample rate does not.
-            // So we adjust the bit rate for better compression, based on requested sample rate.
-            Integer bitRate = 32000; // default bit rate
-            if (sampleRate < 30000) {
-                bitRate = 16384;
-            }
-            if (sampleRate < 16000) {
-                bitRate = 8192;
-            }
-            this.recorder.setAudioEncodingBitRate(bitRate);
+                this.recorder.setAudioChannels(channels);
+                this.recorder.setAudioSamplingRate(sampleRate);
 
-            Log.d(LOG_TAG, "MPEG-4 recording started with bit rate of " + bitRate + ", sample rate of " + sampleRate + "hz, " + channels + " audio channel(s)");
+                // On Android with MPEG4/AAC, bitRate affects file size, surprisingly, sample rate does not.
+                // So we adjust the bit rate for better compression, based on requested sample rate.
+                int  bitRate = 32000; // default bit rate
 
-            this.recorder.setOutputFile(this.tempFile);
-            try {
-                this.recorder.prepare();
-                this.recorder.start();
-                this.setState(STATE.MEDIA_RUNNING);
-                return;
-            } catch (IllegalStateException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+                if (sampleRate < 30000) {
+                    bitRate = 16384;
+                }
+                if (sampleRate < 16000) {
+                    bitRate = 8192;
+                }
+                this.recorder.setAudioEncodingBitRate(bitRate);
 
-            sendErrorStatus(MEDIA_ERR_ABORTED);
-            break;
-        case RECORD:
-            Log.d(LOG_TAG, "AudioPlayer Error: Already recording.");
-            sendErrorStatus(MEDIA_ERR_ABORTED);
+                Log.d(LOG_TAG, "MPEG-4 recording started with bit rate of " + bitRate + ", sample rate of " + sampleRate + "hz, " + channels + " audio channel(s)");
+
+                this.recorder.setOutputFile(this.tempFile);
+                this.usingCompression = true;
+
+                try {
+                    this.recorder.prepare();
+                    this.recorder.start();
+                    this.setState(STATE.MEDIA_RUNNING);
+                    return;
+                } catch (IllegalStateException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                sendErrorStatus(MEDIA_ERR_ABORTED);
+                break;
+            case RECORD:
+                Log.d(LOG_TAG, "AudioPlayer Error: Already recording.");
+                sendErrorStatus(MEDIA_ERR_ABORTED);
         }
     }
-	
-	
-	 /**
+
+
+    /**
      * Resume recording the specified file.
      *
      * @param file              The name of the file
@@ -260,22 +284,33 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
                 this.recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
                 this.recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
                 this.recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            
-                this.recorder.setAudioChannels(channels); 
-                this.recorder.setAudioSamplingRate(sampleRate);
 
-                // On Android with MPEG4/AAC, bitRate affects file size, surprisingly, sample rate does not.
-                // So we adjust the bit rate for better compression, based on requested sample rate.
-                 Integer bitRate = 32000; // default bit rate
-                if (sampleRate < 30000) {
-                    bitRate = 16384;
+                int  bitRate = 32000; // default bit rate
+
+                if (this.usingCompression) {
+                    this.recorder.setAudioChannels(channels);
+                    this.recorder.setAudioSamplingRate(sampleRate);
+
+                    // On Android with MPEG4/AAC, bitRate affects file size, surprisingly, sample rate does not.
+                    // So we adjust the bit rate for better compression, based on requested sample rate.
+
+                    if (sampleRate < 30000) {
+                        bitRate = 16384;
+                    }
+                    if (sampleRate < 16000) {
+                        bitRate = 8192;
+                    }
+
+                } else {
+                    // override any passed in params, match setting in startRecording method
+                    this.recorder.setAudioChannels(1); // single channel
+                    this.recorder.setAudioSamplingRate(44100); // 44.1 kHz for decent sound, similar to stock iOS media plugin
+                    this.recorder.setAudioEncodingBitRate(32000); // low bit rate
                 }
-                if (sampleRate < 16000) {
-                    bitRate = 8192;
-                }
+
                 this.recorder.setAudioEncodingBitRate(bitRate);
                 Log.d(LOG_TAG, "MPEG-4 recording started with bit rate of " + bitRate + ", sample rate of " + sampleRate + "hz, " + channels + " audio channel(s)");
-                
+
                 this.recorder.setOutputFile(this.tempFile);
                 try {
                     this.recorder.prepare();
@@ -306,25 +341,40 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
      */
     public void moveFile(String file) {
         /* this is a hack to save the file as the specified name */
-        File f = new File(this.tempFile);
+        // modified 07-15-2021 to handle API 29+
 
         if (!file.startsWith("/")) {
             if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-                file = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + file;
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { //deprecated after sdk 29,
+                    //if we have storage write permission we keep doing it this way
+                    if (hasWritePermission()) {
+                        file = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + file;
+                    } else {
+                        // new path
+                        file = this.handler.cordova.getActivity().getApplicationContext().getExternalFilesDir(null).getAbsolutePath() + File.separator + file;
+                    }
+                } else {
+                    //prior to sdk 29, we keep asking permissions as before so we write to the same place as before
+                    file = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + file;
+                }
+
             } else {
                 file = "/data/data/" + handler.cordova.getActivity().getPackageName() + "/cache/" + file;
             }
         }
 
+        File f = new File(this.tempFile);
         String logMsg = "renaming " + this.tempFile + " to " + file;
         Log.d(LOG_TAG, logMsg);
-		
-		if (f.exists()) {
-			if (!f.renameTo(new File(file))) Log.e(LOG_TAG, "FAILED " + logMsg);
-		}
+
+        if (f.exists()) {
+            if (!f.renameTo(new File(file))) Log.e(LOG_TAG, "FAILED " + logMsg);
+        }
+
     }
-	
-	
+
+
     /**
      * Append temporary recorded file to specified filename
      *
@@ -333,8 +383,21 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
     public void appendFile(String file) {
 
         if (!file.startsWith("/")) {
+            // modified 07-15-2021 to handle API 29+
             if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-                file = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + file;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { //deprecated after sdk 29,
+                    //if we have storage write permission we keep doing it this way
+                    if (hasWritePermission()) {
+                        file = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + file;
+                    } else {
+                        // new path
+                        file = this.handler.cordova.getActivity().getApplicationContext().getExternalFilesDir(null).getAbsolutePath() + File.separator + file;
+                    }
+                } else {
+                    //prior to sdk 29, we keep asking permissions as before so we write to the same place as before
+                    file = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + file;
+                }
+
             } else {
                 file = "/data/data/" + handler.cordova.getActivity().getPackageName() + "/cache/" + file;
             }
@@ -345,7 +408,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
         mp4ParserWrapper.append(file, this.tempFile);
 
     }
-	
+
 
     /**
      * Stop recording and save to the file specified when recording started.
@@ -365,9 +428,9 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             }
         }
     }
-	
-	
-	 /**
+
+
+    /**
      * Pause recording (simulated), stop recording and append to the file specified when recording started.
      */
     public void pauseRecording() {
@@ -451,8 +514,8 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             sendErrorStatus(MEDIA_ERR_NONE_ACTIVE);
         }
     }
-	
-	 /**
+
+    /**
      * Get db Recording Level.
      *
      * @return    double dbLevel
@@ -465,7 +528,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
         if (this.state == STATE.MEDIA_RUNNING) {
             int maxAmplitude = this.recorder.getMaxAmplitude();
 
-            /* 
+            /*
             /  Warning!
             /
             /  This is a desperate attempt to determine dB (SPL).
@@ -489,8 +552,8 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             return -1;
         }
     }
-	
-	
+
+
     /**
      * Callback to be invoked when playback of a media source has completed.
      *
@@ -534,13 +597,13 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
     }
 
     /**
-      * Get the duration of the audio file.
-      *
-      * @param file             The name of the audio file.
-      * @return                 The duration in msec.
-      *                             -1=can't be determined
-      *                             -2=not allowed
-      */
+     * Get the duration of the audio file.
+     *
+     * @param file             The name of the audio file.
+     * @return                 The duration in msec.
+     *                             -1=can't be determined
+     *                             -2=not allowed
+     */
     public float getDuration(String file) {
 
         // Can't get duration of recording
@@ -669,15 +732,15 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
      */
     private boolean playMode() {
         switch(this.mode) {
-        case NONE:
-            this.setMode(MODE.PLAY);
-            break;
-        case PLAY:
-            break;
-        case RECORD:
-            Log.d(LOG_TAG, "AudioPlayer Error: Can't play in record mode.");
-            sendErrorStatus(MEDIA_ERR_ABORTED);
-            return false; //player is not ready
+            case NONE:
+                this.setMode(MODE.PLAY);
+                break;
+            case PLAY:
+                break;
+            case RECORD:
+                Log.d(LOG_TAG, "AudioPlayer Error: Can't play in record mode.");
+                sendErrorStatus(MEDIA_ERR_ABORTED);
+                return false; //player is not ready
         }
         return true;
     }
@@ -766,16 +829,29 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
                     fileInputStream.close();
                 }
                 else {
-                    this.player.setDataSource(Environment.getExternalStorageDirectory().getPath() + "/" + file);
+
+                    // modified 07-15-2021 to handle API 29+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { //deprecated after sdk 29,
+                        //if we have storage write permission we keep doing it this way
+                        if (hasWritePermission()) {
+                            this.player.setDataSource(Environment.getExternalStorageDirectory().getPath() + "/" + file);
+                        } else {
+                            //new way
+                            this.player.setDataSource(this.handler.cordova.getActivity().getApplicationContext().getExternalFilesDir(null).getPath() + "/" + file);
+                        }
+
+                    } else {
+                        this.player.setDataSource(Environment.getExternalStorageDirectory().getPath() + "/" + file);
+                    }
                 }
             }
-                this.setState(STATE.MEDIA_STARTING);
-                this.player.setOnPreparedListener(this);
-                this.player.prepare();
+            this.setState(STATE.MEDIA_STARTING);
+            this.player.setOnPreparedListener(this);
+            this.player.prepare();
 
-                // Get duration
-                this.duration = getDurationInSeconds();
-            }
+            // Get duration
+            this.duration = getDurationInSeconds();
+        }
     }
 
     private void sendErrorStatus(int errorCode) {
@@ -805,5 +881,9 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
         }
 
         this.handler.sendEventMessage("status", statusDetails);
+    }
+
+    private boolean hasWritePermission() {
+        return PermissionHelper.hasPermission(this.handler, Manifest.permission.WRITE_EXTERNAL_STORAGE);
     }
 }
