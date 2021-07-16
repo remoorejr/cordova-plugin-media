@@ -640,9 +640,14 @@ public class AudioHandler extends CordovaPlugin {
         }
         else if (PermissionHelper.hasPermission(this, permissions[RECORD_AUDIO])) {
 
-            //do not need permission, because it will save to scoped storage directories
+            //do not need write_external_storage permission, because it will save to scoped storage directories
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                this.startRecordingAudio(recordId, FileHelper.stripFileProtocol(fileUriStr));
+                 if (withCompression) {
+                    this.startRecordingAudioWithCompression(recordId, FileHelper.stripFileProtocol(fileUriStr),this.audioChannels,this.audioSampleRate);
+                } else {
+                    this.startRecordingAudio(recordId, FileHelper.stripFileProtocol(fileUriStr));
+                }
+
             } else {
                 getWritePermission(WRITE_EXTERNAL_STORAGE);
             }

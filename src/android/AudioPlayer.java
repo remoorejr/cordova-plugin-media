@@ -95,8 +95,6 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
     private boolean prepareOnly = true;     // playback after file prepare flag
     private int seekOnPrepared = 0;         // seek to this location once media is prepared
 
-    private boolean usingCompression = false;   // flag used when appending to existing recording, compression levels must match
-
     /**
      * Constructor.
      *
@@ -180,7 +178,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
                 this.recorder.setAudioEncodingBitRate(32000); // low bit rate
 
                 this.recorder.setOutputFile(this.tempFile);
-                this.usingCompression = false;
+
                 try {
                     this.recorder.prepare();
                     this.recorder.start();
@@ -243,7 +241,6 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
                 Log.d(LOG_TAG, "MPEG-4 recording started with bit rate of " + bitRate + ", sample rate of " + sampleRate + "hz, " + channels + " audio channel(s)");
 
                 this.recorder.setOutputFile(this.tempFile);
-                this.usingCompression = true;
 
                 try {
                     this.recorder.prepare();
@@ -287,27 +284,19 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
 
                 int  bitRate = 32000; // default bit rate
 
-                if (this.usingCompression) {
-                    this.recorder.setAudioChannels(channels);
-                    this.recorder.setAudioSamplingRate(sampleRate);
+                this.recorder.setAudioChannels(channels);
+                this.recorder.setAudioSamplingRate(sampleRate);
 
-                    // On Android with MPEG4/AAC, bitRate affects file size, surprisingly, sample rate does not.
-                    // So we adjust the bit rate for better compression, based on requested sample rate.
+                // On Android with MPEG4/AAC, bitRate affects file size, surprisingly, sample rate does not.
+                // So we adjust the bit rate for better compression, based on requested sample rate.
 
-                    if (sampleRate < 30000) {
-                        bitRate = 16384;
-                    }
-                    if (sampleRate < 16000) {
-                        bitRate = 8192;
-                    }
-
-                } else {
-                    // override any passed in params, match setting in startRecording method
-                    this.recorder.setAudioChannels(1); // single channel
-                    this.recorder.setAudioSamplingRate(44100); // 44.1 kHz for decent sound, similar to stock iOS media plugin
-                    this.recorder.setAudioEncodingBitRate(32000); // low bit rate
+                if (sampleRate < 30000) {
+                    bitRate = 16384;
                 }
-
+                if (sampleRate < 16000) {
+                    bitRate = 8192;
+                }
+                
                 this.recorder.setAudioEncodingBitRate(bitRate);
                 Log.d(LOG_TAG, "MPEG-4 recording started with bit rate of " + bitRate + ", sample rate of " + sampleRate + "hz, " + channels + " audio channel(s)");
 
