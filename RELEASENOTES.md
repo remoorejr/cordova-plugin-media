@@ -20,6 +20,9 @@
 -->
 # Release Notes
 
+### 2.2.2 (Nov 30, 2021)
+* Changed logic to always create temp files in the local app storage rather than trying to use external storage to avoid new android 11 file system restriction issue.
+
 ### 0.2.1 (Sept 5, 2013)
 * CB-4432 copyright notice change
 

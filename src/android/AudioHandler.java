@@ -92,6 +92,10 @@ public class AudioHandler extends CordovaPlugin {
 
     }
 
+    public Context getApplicationContext() {
+        return this.cordova.getActivity().getApplicationContext();
+    }
+
     protected void getWritePermission(int requestCode)
     {
         PermissionHelper.requestPermission(this, requestCode, permissions[WRITE_EXTERNAL_STORAGE]);

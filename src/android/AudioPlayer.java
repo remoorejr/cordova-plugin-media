@@ -40,7 +40,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 import org.apache.cordova.PermissionHelper;
-
+import android.content.Context;
 
 /**
  * This class implements the audio playback and recording capabilities used by Cordova.
@@ -107,26 +107,13 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
         this.audioFile = file;
         this.recorder = new MediaRecorder();
         // generate temp file
-        // modified 07-15-2021 to handle API 29+
-        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+        this.tempFile = generateTempFile();
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { //deprecated after sdk 29,
-                //if we have storage write permission we keep doing it this way
-                if (hasWritePermission()) {
-                    this.tempFile = Environment.getExternalStorageDirectory().getAbsolutePath() + "/tmprecording.m4a";
-                } else {
-                    //otherwise we get a directory private to the app (scoped storage)
-                    this.tempFile = this.handler.cordova.getActivity().getApplicationContext().getExternalFilesDir(null).getAbsolutePath() + "/tmprecording.m4a";
-                }
-            } else {
-                //prior to sdk 29, we keep asking permissions as before so we write to the same place as before
-                this.tempFile = Environment.getExternalStorageDirectory().getAbsolutePath() + "/tmprecording.m4a";
-            }
+    }
 
-        } else {
-            this.tempFile = "/data/data/" + handler.cordova.getActivity().getPackageName() + "/cache/tmprecording.m4a";
-        }
-
+    private String generateTempFile() {
+        Context context = this.handler.getApplicationContext();
+        return context.getFilesDir().getAbsolutePath() + "/tmprecording-" + System.currentTimeMillis() + ".m4a";
     }
 
     /**
@@ -330,27 +317,10 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
      */
     public void moveFile(String file) {
         /* this is a hack to save the file as the specified name */
-        // modified 07-15-2021 to handle API 29+
 
         if (!file.startsWith("/")) {
-            if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { //deprecated after sdk 29,
-                    //if we have storage write permission we keep doing it this way
-                    if (hasWritePermission()) {
-                        file = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + file;
-                    } else {
-                        // new path
-                        file = this.handler.cordova.getActivity().getApplicationContext().getExternalFilesDir(null).getAbsolutePath() + File.separator + file;
-                    }
-                } else {
-                    //prior to sdk 29, we keep asking permissions as before so we write to the same place as before
-                    file = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + file;
-                }
-
-            } else {
-                file = "/data/data/" + handler.cordova.getActivity().getPackageName() + "/cache/" + file;
-            }
+            Context context = this.handler.getApplicationContext();
+            file = context.getFilesDir().getAbsolutePath() + File.separator + file;
         }
 
         File f = new File(this.tempFile);
