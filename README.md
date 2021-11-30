@@ -30,7 +30,7 @@ A .m4a file extension is required.
 
 The reduction in file size is required for efficient online/offline storage and retrieval of the audio files. The smaller file size allows the audio file to be efficiently (smaller payload) uploaded to a server for storage and retrieved (while the device is online) for storage within the device file system for offline (disconnected) playback. This is a feature supported by Alpha Anywhere.
 
-This plugin is tightly integrated within the [Alpha Anywhere](http://www.alphasoftware.com) PhoneGap App Builder. Alpha Anywhere is a Rapid Mobile Application Development and Deployment platform.
+This plugin is tightly integrated within the [Alpha Anywhere](http://www.alphasoftware.com) Cordova App Builder. Alpha Anywhere is a Rapid Mobile Application Development and Deployment platform.
 
 New methods include (iOS and Android only):
 
@@ -69,21 +69,8 @@ Although in the global scope, it is not available until after the `deviceready` 
 ## Supported Platforms
 
 - Android
-- BlackBerry 10
 - iOS
-- Windows Phone 7 and 8
-- Tizen
-- Windows 8
-- Windows
-- Browser
 
-## Windows Phone Quirks
-
-- Only one media file can be played back at a time.
-
-- There are strict restrictions on how your application interacts with other media. See the [Microsoft documentation for details][url].
-
-[url]: http://msdn.microsoft.com/en-us/library/windowsphone/develop/hh184838(v=vs.92).aspx
 
 ## Media
 
@@ -348,10 +335,6 @@ Sets the current position within an audio file.
     }, 5000);
 
 
-### BlackBerry 10 Quirks
-
-- Not supported on BlackBerry OS 5 devices.
-
 ## media.setVolume
 
 Set the volume for an audio file.
@@ -408,8 +391,6 @@ Starts recording an audio file.
 
 - Android
 - iOS
-- Windows Phone 7 and 8
-- Windows
 
 ### Quick Example
 
@@ -447,18 +428,6 @@ Starts recording an audio file.
 - Files can be recorded and played back using the documents URI:
 
         var myMedia = new Media("documents://beer.m4a")
-
-### Windows Quirks
-
-- Windows devices can use MP3, M4A and WMA formats for recorded audio. However in most cases it is not possible to use MP3 for audio recording on _Windows Phone 8.1_ devices, because an MP3 encoder is [not shipped with Windows Phone](https://msdn.microsoft.com/en-us/library/windows/apps/windows.media.mediaproperties.mediaencodingprofile.createmp3.aspx).
-
-- If a full path is not provided, the recording is placed in the AppData/temp directory. This can be accessed via the `File` API using `LocalFileSystem.TEMPORARY` or 'ms-appdata:///temp/<filename>' URI.
-
-- Any subdirectory specified at record time must already exist.
-
-### Tizen Quirks
-
-- Not supported on Tizen devices.
 
 ## media.startRecordWithCompression (options)
 
@@ -630,8 +599,6 @@ Stops recording an audio file.
 
 - Android
 - iOS
-- Windows Phone 7 and 8
-- Windows
 
 ### Quick Example
 
@@ -660,11 +627,6 @@ Stops recording an audio file.
         }, 10000);
     }
 
-
-
-### Tizen Quirks
-
-- Not supported on Tizen devices.
 
 ## media.getRecordLevels
 
