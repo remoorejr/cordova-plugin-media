@@ -6,9 +6,7 @@
        to you under the Apache License, Version 2.0 (the
        "License"); you may not use this file except in compliance
        with the License.  You may obtain a copy of the License at
-
          http://www.apache.org/licenses/LICENSE-2.0
-
        Unless required by applicable law or agreed to in writing,
        software distributed under the License is distributed on an
        "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,6 +16,7 @@
 */
 package org.apache.cordova.media;
 
+import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
@@ -40,6 +39,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 import org.apache.cordova.PermissionHelper;
+
+
 
 
 /**
@@ -106,28 +107,28 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
         this.id = id;
         this.audioFile = file;
         this.recorder = new MediaRecorder();
-        // generate temp file
-        // modified 07-15-2021 to handle API 29+
-        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { //deprecated after sdk 29,
-                //if we have storage write permission we keep doing it this way
-                if (hasWritePermission()) {
-                    this.tempFile = Environment.getExternalStorageDirectory().getAbsolutePath() + "/tmprecording.m4a";
-                } else {
-                    //otherwise we get a directory private to the app (scoped storage)
-                    this.tempFile = this.handler.cordova.getActivity().getApplicationContext().getExternalFilesDir(null).getAbsolutePath() + "/tmprecording.m4a";
-                }
-            } else {
-                //prior to sdk 29, we keep asking permissions as before so we write to the same place as before
-                this.tempFile = Environment.getExternalStorageDirectory().getAbsolutePath() + "/tmprecording.m4a";
-            }
-
-        } else {
-            this.tempFile = "/data/data/" + handler.cordova.getActivity().getPackageName() + "/cache/tmprecording.m4a";
-        }
-
+        this.tempFile = getTempFileName(null);
     }
+
+    /**
+     * getTempFileName, use external file or cache
+     * @param fileName                 // optional
+     */
+    public String getTempFileName(String fileName) {
+        Context context = handler.getApplicationContext();
+        File dir = Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)
+                ? context.getExternalFilesDir(null)
+                : context.getCacheDir();
+
+        fileName = (fileName == null || fileName.isEmpty())
+                ? "tmprecording.m4a"
+                : fileName;
+        
+        String tempFileName = dir.getAbsolutePath() + File.separator + fileName;
+        Log.d(LOG_TAG, "tempFileName= "+ tempFileName);
+        return tempFileName;
+    }
+
 
     /**
      * Destroy player and stop audio playing or recording.
@@ -296,7 +297,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
                 if (sampleRate < 16000) {
                     bitRate = 8192;
                 }
-                
+
                 this.recorder.setAudioEncodingBitRate(bitRate);
                 Log.d(LOG_TAG, "MPEG-4 recording started with bit rate of " + bitRate + ", sample rate of " + sampleRate + "hz, " + channels + " audio channel(s)");
 
@@ -333,24 +334,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
         // modified 07-15-2021 to handle API 29+
 
         if (!file.startsWith("/")) {
-            if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { //deprecated after sdk 29,
-                    //if we have storage write permission we keep doing it this way
-                    if (hasWritePermission()) {
-                        file = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + file;
-                    } else {
-                        // new path
-                        file = this.handler.cordova.getActivity().getApplicationContext().getExternalFilesDir(null).getAbsolutePath() + File.separator + file;
-                    }
-                } else {
-                    //prior to sdk 29, we keep asking permissions as before so we write to the same place as before
-                    file = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + file;
-                }
-
-            } else {
-                file = "/data/data/" + handler.cordova.getActivity().getPackageName() + "/cache/" + file;
-            }
+            file = getTempFileName(file);
         }
 
         File f = new File(this.tempFile);
@@ -372,24 +356,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
     public void appendFile(String file) {
 
         if (!file.startsWith("/")) {
-            // modified 07-15-2021 to handle API 29+
-            if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { //deprecated after sdk 29,
-                    //if we have storage write permission we keep doing it this way
-                    if (hasWritePermission()) {
-                        file = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + file;
-                    } else {
-                        // new path
-                        file = this.handler.cordova.getActivity().getApplicationContext().getExternalFilesDir(null).getAbsolutePath() + File.separator + file;
-                    }
-                } else {
-                    //prior to sdk 29, we keep asking permissions as before so we write to the same place as before
-                    file = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + file;
-                }
-
-            } else {
-                file = "/data/data/" + handler.cordova.getActivity().getPackageName() + "/cache/" + file;
-            }
+            file = getTempFileName(file);
         }
 
         String logMsg = "appending" + this.tempFile + " to " + file;
@@ -527,7 +494,6 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             /
             /  The pascal pressure is calculated based on the idea that the max amplitude (being a value between 0 and 32767)
             /  is relative to the pressure.
-
             /  The value 51805.5336 used below is derived from the assumption that when x = 32767, pressure = 0.6325 Pa and that
             /  when x = 1, pressure = 0.0002 Pa (the reference value)
             /
@@ -818,20 +784,8 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
                     fileInputStream.close();
                 }
                 else {
-
-                    // modified 07-15-2021 to handle API 29+
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { //deprecated after sdk 29,
-                        //if we have storage write permission we keep doing it this way
-                        if (hasWritePermission()) {
-                            this.player.setDataSource(Environment.getExternalStorageDirectory().getPath() + "/" + file);
-                        } else {
-                            //new way
-                            this.player.setDataSource(this.handler.cordova.getActivity().getApplicationContext().getExternalFilesDir(null).getPath() + "/" + file);
-                        }
-
-                    } else {
-                        this.player.setDataSource(Environment.getExternalStorageDirectory().getPath() + "/" + file);
-                    }
+                    file = getTempFileName(file);
+                    this.player.setDataSource(file);
                 }
             }
             this.setState(STATE.MEDIA_STARTING);
