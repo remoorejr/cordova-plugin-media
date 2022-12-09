@@ -20,13 +20,13 @@
 # cordova-plugin-media-with-compression
 
 This plugin is a modified version of cordova-plugin-media that provides the ability to record and play back audio files on a device.
-Included are new methods (iOS and Android only) to pause recording, resume recording and to query the audio input power levels. 
+Included are new methods (iOS and Android only) to pause recording, resume recording and to query the audio input power levels.
 
 This plugin uses MPEG4 compression for iOS and (as of version 1.0.21) Android audio recording. On iOS, this results in a significant reduction in the recorded audio file size when compared to the stock Media plugin.
 
 Since Android and iOS will record MPEG4 encoded audio with this plugin, the files generated are now compatible for playback across both platforms.
 
-A .m4a file extension is required.  
+A .m4a file extension is required.
 
 The reduction in file size is required for efficient online/offline storage and retrieval of the audio files. The smaller file size allows the audio file to be efficiently (smaller payload) uploaded to a server for storage and retrieved (while the device is online) for storage within the device file system for offline (disconnected) playback. This is a feature supported by Alpha Anywhere.
 
@@ -34,21 +34,19 @@ This plugin is tightly integrated within the [Alpha Anywhere](http://www.alphaso
 
 New methods include (iOS and Android only):
 
-__recordAudioWithCompression(options)__: The options object includes the NumberOfChannels and the SampleRate.
+**recordAudioWithCompression(options)**: The options object includes the NumberOfChannels and the SampleRate.
 See the recordAudioWithCompression method description below for further details.
 
-__pauseRecord()__: Pause the existing recording session.
+**pauseRecord()**: Pause the existing recording session.
 See the pauseRecord method description below for further details.
 
-__resumeRecord()__: Resume the existing recording session.
+**resumeRecord()**: Resume the existing recording session.
 See the resumeRecord method description below for further details.
 
-__getRecordLevels()__: On iOS devices, returns dB of the averagePower and the peakPower from the recorder input. On Android devices, returns an approximation of dB (SPL), derived from the maximum absolute amplitude that was sampled since the last call to this method.  
+**getRecordLevels()**: On iOS devices, returns dB of the averagePower and the peakPower from the recorder input. On Android devices, returns an approximation of dB (SPL), derived from the maximum absolute amplitude that was sampled since the last call to this method.  
 See the getRecordLevels method description below for further details.
 
-
-
-__NOTE__: The current implementation does not adhere to a W3C
+**NOTE**: The current implementation does not adhere to a W3C
 specification for media capture, and is provided for convenience only.
 A future implementation will adhere to the latest W3C specification
 and may deprecate the current APIs.
@@ -71,31 +69,30 @@ Although in the global scope, it is not available until after the `deviceready` 
 - Android
 - iOS
 
-
 ## Media
 
     var media = new Media(src, mediaSuccess, [mediaError], [mediaStatus]);
 
 ### Parameters
 
-- __src__: A URI containing the audio content. _(DOMString)_
+- **src**: A URI containing the audio content. _(DOMString)_
 
-- __mediaSuccess__: (Optional) The callback that executes after a `Media` object has completed the current play, record, or stop action. _(Function)_
+- **mediaSuccess**: (Optional) The callback that executes after a `Media` object has completed the current play, record, or stop action. _(Function)_
 
-- __mediaError__: (Optional) The callback that executes if an error occurs. _(Function)_
+- **mediaError**: (Optional) The callback that executes if an error occurs. _(Function)_
 
-- __mediaStatus__: (Optional) The callback that executes to indicate status changes. _(Function)_
+- **mediaStatus**: (Optional) The callback that executes to indicate status changes. _(Function)_
 
 ### Constants
 
 The following constants are reported as the only parameter to the
 `mediaStatus` callback:
 
-- `Media.MEDIA_NONE`     = 0;
+- `Media.MEDIA_NONE` = 0;
 - `Media.MEDIA_STARTING` = 1;
-- `Media.MEDIA_RUNNING`  = 2;
-- `Media.MEDIA_PAUSED`   = 3;
-- `Media.MEDIA_STOPPED`  = 4;
+- `Media.MEDIA_RUNNING` = 2;
+- `Media.MEDIA_PAUSED` = 3;
+- `Media.MEDIA_STOPPED` = 4;
 
 ### Methods
 
@@ -119,33 +116,33 @@ The following constants are reported as the only parameter to the
 
 - `media.resumeRecord`: Resume the recording session in progress.
 
-- `media.startRecordWithCompression`: Start recording an audio file, with SampleRate and NumberOfChannels specified. Uses MPEG4 compression. iOS and Android only. 
+- `media.startRecordWithCompression`: Start recording an audio file, with SampleRate and NumberOfChannels specified. Uses MPEG4 compression. iOS and Android only.
 
 - `media.stopRecord`: Stop recording an audio file.
 
 - `media.stop`: Stop playing an audio file.
 
-- `media.getRecordLevels`: On iOS devices, returns dB of the averagePower and the peakPower from the recorder input. On Android devices, returns an approximation of dB (SPL), derived from the maximum absolute amplitude that was sampled since the last call to this method.  
+- `media.getRecordLevels`: On iOS devices, returns dB of the averagePower and the peakPower from the recorder input. On Android devices, returns an approximation of dB (SPL), derived from the maximum absolute amplitude that was sampled since the last call to this method.
 
 ### Additional ReadOnly Parameters
 
-- __position__: The position within the audio playback, in seconds.
-    - Not automatically updated during play; call `getCurrentPosition` to update.
+- **position**: The position within the audio playback, in seconds.
 
-- __duration__: The duration of the media, in seconds.
+  - Not automatically updated during play; call `getCurrentPosition` to update.
 
+- **duration**: The duration of the media, in seconds.
 
 ## media.getCurrentPosition
 
-Returns the current position within an audio file.  Also updates the `Media` object's `position` parameter.
+Returns the current position within an audio file. Also updates the `Media` object's `position` parameter.
 
     media.getCurrentPosition(mediaSuccess, [mediaError]);
 
 ### Parameters
 
-- __mediaSuccess__: The callback that is passed the current position in seconds.
+- **mediaSuccess**: The callback that is passed the current position in seconds.
 
-- __mediaError__: (Optional) The callback to execute if an error occurs.
+- **mediaError**: (Optional) The callback to execute if an error occurs.
 
 ### Quick Example
 
@@ -170,11 +167,9 @@ Returns the current position within an audio file.  Also updates the `Media` obj
         );
     }, 1000);
 
-
 ## media.getDuration
 
 Returns the duration of an audio file in seconds. If the duration is unknown, it returns a value of -1.
-
 
     media.getDuration();
 
@@ -198,13 +193,11 @@ Returns the duration of an audio file in seconds. If the duration is unknown, it
         }
     }, 100);
 
-
 ## media.pause
 
 Pauses playing an audio file.
 
     media.pause();
-
 
 ### Quick Example
 
@@ -228,13 +221,11 @@ Pauses playing an audio file.
         }, 10000);
     }
 
-
 ## media.play
 
 Starts or resumes playing an audio file.
 
     media.play();
-
 
 ### Quick Example
 
@@ -256,24 +247,23 @@ Starts or resumes playing an audio file.
         my_media.play();
     }
 
-
 ### iOS Quirks
 
-- __numberOfLoops__: Pass this option to the `play` method to specify
+- **numberOfLoops**: Pass this option to the `play` method to specify
   the number of times you want the media file to play, e.g.:
 
         var myMedia = new Media("http://audio.ibeat.org/content/p1rj1s/p1rj1s_-_rockGuitar.mp3")
         myMedia.play({ numberOfLoops: 2 })
 
-- __playAudioWhenScreenIsLocked__: Pass in this option to the `play`
+- **playAudioWhenScreenIsLocked**: Pass in this option to the `play`
   method to specify whether you want to allow playback when the screen
-  is locked.  If set to `true` (the default value), the state of the
+  is locked. If set to `true` (the default value), the state of the
   hardware mute button is ignored, e.g.:
 
         var myMedia = new Media("http://audio.ibeat.org/content/p1rj1s/p1rj1s_-_rockGuitar.mp3")
         myMedia.play({ playAudioWhenScreenIsLocked : false })
 
-- __order of file search__: When only a file name or simple path is
+- **order of file search**: When only a file name or simple path is
   provided, iOS searches in the `www` directory for the file, then in
   the application's `documents/tmp` directory:
 
@@ -282,14 +272,13 @@ Starts or resumes playing an audio file.
 
 Since iOS 10 it's mandatory to add a `NSMicrophoneUsageDescription` in the info.plist.
 
-* `NSMicrophoneUsageDescription` describes the reason that the app accesses the user’s microphone.
+- `NSMicrophoneUsageDescription` describes the reason that the app accesses the user’s microphone.
 
 When the system prompts the user to allow access, this string is displayed as part of the dialog box.
 
 This string has been hard coded with the following text to allow the plugin to be used by PhoneGap Build as well as the Cordova CLI:
 
-* `NSMicrophoneUsageDescription:` This app requires access to the microphone to record audio. 
-
+- `NSMicrophoneUsageDescription:` This app requires access to the microphone to record audio.
 
 ## media.release
 
@@ -299,7 +288,6 @@ OpenCore instances for media playback. Applications should call the `release`
 function for any `Media` resource that is no longer needed.
 
     media.release();
-
 
 ### Quick Example
 
@@ -311,7 +299,6 @@ function for any `Media` resource that is no longer needed.
     my_media.stop();
     my_media.release();
 
-
 ## media.seekTo
 
 Sets the current position within an audio file.
@@ -320,8 +307,7 @@ Sets the current position within an audio file.
 
 ### Parameters
 
-- __milliseconds__: The position to set the playback position within the audio, in milliseconds.
-
+- **milliseconds**: The position to set the playback position within the audio, in milliseconds.
 
 ### Quick Example
 
@@ -334,7 +320,6 @@ Sets the current position within an audio file.
         my_media.seekTo(10000);
     }, 5000);
 
-
 ## media.setVolume
 
 Set the volume for an audio file.
@@ -343,7 +328,7 @@ Set the volume for an audio file.
 
 ### Parameters
 
-- __volume__: The volume to set for playback.  The value must be within the range of 0.0 to 1.0.
+- **volume**: The volume to set for playback. The value must be within the range of 0.0 to 1.0.
 
 ### Supported Platforms
 
@@ -380,7 +365,6 @@ Set the volume for an audio file.
         }, 5000);
     }
 
-
 ## media.startRecord
 
 Starts recording an audio file.
@@ -413,7 +397,6 @@ Starts recording an audio file.
         mediaRec.startRecord();
     }
 
-
 ### Android Quirks
 
 - Android devices record audio in MPEG4 format with this plugin. The specified file should end with a _.m4a_ extension.
@@ -421,7 +404,7 @@ Starts recording an audio file.
 
 ### iOS Quirks
 
-- iOS devices will record in MPEG4 format with this plugin. The specified file should end with a  _.m4a_ and an error is returned if the file name extension is not correct.
+- iOS devices will record in MPEG4 format with this plugin. The specified file should end with a _.m4a_ and an error is returned if the file name extension is not correct.
 
 - If a full path is not provided, the recording is placed in the application's `documents/tmp` directory. This can be accessed via the `File` API using `LocalFileSystem.TEMPORARY`. Any subdirectory specified at record time must already exist.
 
@@ -444,9 +427,10 @@ All iOS and Android devices currently support 1 input channel. This option is pr
 A single channel recording is half the size of a stereo recording and unless the device supports a pair of microphones,
 use a single channel.
 
-   media.startRecordWithCompression(options);
+media.startRecordWithCompression(options);
 
 ### Supported Platforms
+
 - Android
 - iOS
 
@@ -471,7 +455,7 @@ use a single channel.
         var options = {
             SampleRate: 16000,
             NumberOfChannels: 1
-	    }
+        }
 
         mediaRec.startRecordWithCompression(options);
     }
@@ -627,10 +611,9 @@ Stops recording an audio file.
         }, 10000);
     }
 
-
 ## media.getRecordLevels
 
-On iOS devices, returns dB of the averagePower and the peakPower from the recorder input. On Android devices, returns an approximation of the dB level (SPL), derived from the maximum absolute amplitude that was sampled since the last call to this method.  
+On iOS devices, returns dB of the averagePower and the peakPower from the recorder input. On Android devices, returns an approximation of the dB level (SPL), derived from the maximum absolute amplitude that was sampled since the last call to this method.
 
     media.getRecordLevels();
 
@@ -647,7 +630,7 @@ On iOS devices, returns dB of the averagePower and the peakPower from the record
     var _media = {};
     _media.intervalTime = 250;
     _media.intervalTimer = null;
-    
+
     function recordAudio() {
         var src = "myrecording.mp3";
         var mediaRecorder = new Media(src,
@@ -680,7 +663,6 @@ On iOS devices, returns dB of the averagePower and the peakPower from the record
         }
     }
 
-    
 ## MediaError
 
 A `MediaError` object is returned to the `mediaError` callback
@@ -688,14 +670,13 @@ function when an error occurs.
 
 ### Properties
 
-- __code__: One of the predefined error codes listed below.
+- **code**: One of the predefined error codes listed below.
 
-- __message__: An error message describing the details of the error.
+- **message**: An error message describing the details of the error.
 
 ### Constants
 
-- `MediaError.MEDIA_ERR_ABORTED`        = 1
-- `MediaError.MEDIA_ERR_NETWORK`        = 2
-- `MediaError.MEDIA_ERR_DECODE`         = 3
+- `MediaError.MEDIA_ERR_ABORTED` = 1
+- `MediaError.MEDIA_ERR_NETWORK` = 2
+- `MediaError.MEDIA_ERR_DECODE` = 3
 - `MediaError.MEDIA_ERR_NONE_SUPPORTED` = 4
-

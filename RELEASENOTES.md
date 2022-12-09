@@ -154,3 +154,4 @@
 
 - removed code block to access native iOS file, userAgent missing in Cordova iOS 6.2.0, causing compile errors
 - revised plugin id to sync with repository name for naming consistency
+- revised file plugin dependency to v4.33 or >
