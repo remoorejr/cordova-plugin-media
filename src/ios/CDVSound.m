@@ -54,6 +54,10 @@ for significantly better compression.
  Add: #import <AVFoundation/AVFoundation.h>
  */
 
+ /*
+ * 12/09/2022: removed block (lines 395-418) in prepareToPlay method that was causing complile errors using Cordova iOS 6.2.0
+ */
+
 #import "CDVSound.h"
 #import "CDVFile.h"
 #import <AVFoundation/AVFoundation.h>
@@ -387,6 +391,8 @@ for significantly better compression.
     if ([resourceURL isFileURL]) {
         audioFile.player = [[CDVAudioPlayer alloc] initWithContentsOfURL:resourceURL error:&playerError];
     } else {
+
+        /* 
         NSMutableURLRequest* request = [NSMutableURLRequest requestWithURL:resourceURL];
         NSString* userAgent = [self.commandDelegate userAgent];
         if (userAgent) {
@@ -409,6 +415,7 @@ for significantly better compression.
             NSURL* fileURL = [NSURL fileURLWithPath:filePath];
             audioFile.player = [[CDVAudioPlayer alloc] initWithContentsOfURL:fileURL error:&playerError];
         }
+        */
     }
 
     if (playerError != nil) {
