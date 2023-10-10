@@ -69,7 +69,6 @@ public class AudioHandler extends CordovaPlugin {
     private int audioSampleRate;
     private boolean useCompression;
 
-    public static String [] permissions = { Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE};
     public static int RECORD_AUDIO = 0;
     public static int WRITE_EXTERNAL_STORAGE = 1;
 
@@ -96,18 +95,7 @@ public class AudioHandler extends CordovaPlugin {
         return cordova.getActivity().getApplicationContext();
     }
 
-    protected void getWritePermission(int requestCode)
-    {
-        PermissionHelper.requestPermission(this, requestCode, permissions[WRITE_EXTERNAL_STORAGE]);
-    }
-
-
-    protected void getMicPermission(int requestCode)
-    {
-        PermissionHelper.requestPermission(this, requestCode, permissions[RECORD_AUDIO]);
-    }
-
-
+   
     /**
      * Executes the request and returns PluginResult.
      * @param action        The action to execute.
@@ -633,31 +621,24 @@ public class AudioHandler extends CordovaPlugin {
      */
 
     private void promptForRecord(boolean withCompression)
-    {
-        if(PermissionHelper.hasPermission(this, permissions[WRITE_EXTERNAL_STORAGE])  &&
-                PermissionHelper.hasPermission(this, permissions[RECORD_AUDIO])) {
-            if (withCompression) {
+    { 
+        if (android.os.Build.Version.SDK_INT < 33) {
+            if (!PermissionHelper.hasPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                PermissionHelper.requestPermission(this, WRITE_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                return;
+            }
+        }
+
+         // For all Android versions, check for RECORD_AUDIO permission
+         if (!PermissionHelper.hasPermission(this, Manifest.permission.RECORD_AUDIO)) {
+            PermissionHelper.requestPermission(this, RECORD_AUDIO, Manifest.permission.RECORD_AUDIO);
+            return;
+        }
+
+        if (withCompression) {
                 this.startRecordingAudioWithCompression(recordId, FileHelper.stripFileProtocol(fileUriStr),this.audioChannels,this.audioSampleRate);
-            } else {
+        } else {
                 this.startRecordingAudio(recordId, FileHelper.stripFileProtocol(fileUriStr));
-            }
-        }
-        else if (PermissionHelper.hasPermission(this, permissions[RECORD_AUDIO])) {
-
-            //do not need write_external_storage permission, because it will save to scoped storage directories
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                 if (withCompression) {
-                    this.startRecordingAudioWithCompression(recordId, FileHelper.stripFileProtocol(fileUriStr),this.audioChannels,this.audioSampleRate);
-                } else {
-                    this.startRecordingAudio(recordId, FileHelper.stripFileProtocol(fileUriStr));
-                }
-
-            } else {
-                getWritePermission(WRITE_EXTERNAL_STORAGE);
-            }
-        }
-        else {
-            getMicPermission(RECORD_AUDIO);
         }
 
     }
